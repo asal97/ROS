@@ -2,6 +2,8 @@
 
 import os
 import rospy
+import cv2
+import numpy as np
 from duckietown.dtros import DTROS, NodeType
 from std_msgs.msg import String
 
@@ -12,15 +14,42 @@ class MyPublisherNode(DTROS):
         super(MyPublisherNode, self).__init__(node_name=node_name, node_type=NodeType.GENERIC)
         # construct publisher
         self.pub = rospy.Publisher('chatter', String, queue_size=10)
-
+      
+    
     def run(self):
-        # publish message every 1 second
-        rate = rospy.Rate(1) # 1Hz
-        while not rospy.is_shutdown():
-            message = "Hello from %s" % os.environ['VEHICLE_NAME']
+    #publish message every 1 second
+        rate = rospy.Rate(1)
+        while not rospy.is_shutdown():    
+            cap = cv2.VideoCapture()
+            res_w, res_h, fps = 640, 480, 30
+            fov = 'full'
+            # find best mode
+            camera_mode = 3  # 
+            # compile gst pipeline
+            gst_pipeline = """ \
+            nvarguscamerasrc \
+            sensor-mode= exposuretimerange="100000 80000000" ! \
+            video/x-raw(memory:NVMM), width=, height=, format=NV12, 
+            framerate=/1 ! \
+            nvjpegenc ! \
+            appsink \
+            """.format(
+            camera_mode,
+            res_w,
+            res_h,
+            fps
+            )
+            cap.open(gst_pipeline, cv2.CAP_GSTREAMER)
+            ret, frame = cap.read()
+            if frame == None:
+                message = "frame is empty"
+            else:
+                message = frame + "Hello from %s" % os.environ['VEHICLE_NAME']
+            
             rospy.loginfo("Publishing message: '%s'" % message)
             self.pub.publish(message)
             rate.sleep()
+
 
 if __name__ == '__main__':
     # create the node
