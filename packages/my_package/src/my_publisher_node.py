@@ -26,25 +26,12 @@ class MyPublisherNode(DTROS):
             # find best mode
             camera_mode = 3  # 
             # compile gst pipeline
-            gst_pipeline = """ \
-            nvarguscamerasrc \
-            sensor-mode= exposuretimerange="100000 80000000" ! \
-            video/x-raw(memory:NVMM), width=, height=, format=NV12, 
-            framerate=/1 ! \
-            nvjpegenc ! \
-            appsink \
-            """.format(
-            camera_mode,
-            res_w,
-            res_h,
-            fps
-            )
-            cap.open(gst_pipeline, cv2.CAP_GSTREAMER)
+    
             ret, frame = cap.read()
             if frame == None:
                 message = "frame is empty"
             else:
-                message = frame + "Hello from %s" % os.environ['VEHICLE_NAME']
+                message = "Hello from %s" % os.environ['VEHICLE_NAME']
             
             rospy.loginfo("Publishing message: '%s'" % message)
             self.pub.publish(message)
